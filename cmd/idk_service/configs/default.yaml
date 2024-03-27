@@ -1,0 +1,8 @@
+server:
+  port: 8080
+secrets:
+  jwtKey: 3djrWVZQJq5NbFqSEBQpRPxgR3B9U5
+  geminiKey: AIzaSyDZycsqVWrEdmdcUenYWg1FnfyNe1S99lI
+storage:
+  firebaseUserCollection: Users
+
