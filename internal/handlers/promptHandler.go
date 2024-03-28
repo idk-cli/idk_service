@@ -156,7 +156,7 @@ func (h *PromptHandler) getCommandWithReadmeFromGemini(prompt string, os string,
         Provide relevant command.
 
         Your response should be a command only.
-    `, prompt, os)
+    `, prompt, os, readme)
 
 	command, err := clients.GenerateGemini(promptWithContext, h.geminiKey)
 	if err != nil {
