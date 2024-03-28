@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DAILY_LIMIT = 50
+	DAILY_LIMIT = 15
 )
 
 func GetUser(ctx context.Context, client *firestore.Client, collection string, email string) (*IDKUser, error) {
