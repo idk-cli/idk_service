@@ -39,12 +39,30 @@ func GetUser(ctx context.Context, client *firestore.Client, collection string, e
 }
 
 func SaveUser(ctx context.Context, client *firestore.Client, collection string, email string, accessToken string, refreshToken string) error {
-	// Save the key/value pair in Firestore
 	_, err := client.Collection(collection).Doc(email).Set(ctx, map[string]interface{}{
 		"created":          time.Now(),
 		"usageRefreshTime": time.Now(),
 		"usage":            0,
 	}, firestore.MergeAll)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func LogUserQuery(ctx context.Context, client *firestore.Client,
+	collection string, email string,
+	prompt string, os string, existingScript string,
+	aiResponse string, actionType string) error {
+	_, err := client.Collection(collection).NewDoc().Set(ctx, map[string]interface{}{
+		"email":          email,
+		"prompt":         prompt,
+		"existingScript": existingScript,
+		"aiResponse":     aiResponse,
+		"actionType":     actionType,
+	})
 
 	if err != nil {
 		return err

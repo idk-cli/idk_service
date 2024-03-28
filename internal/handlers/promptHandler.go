@@ -12,18 +12,21 @@ import (
 )
 
 type PromptHandler struct {
-	geminiKey           string
-	jwtKey              []byte
-	firestoreClient     *firestore.Client
-	firestoreCollection string
+	geminiKey               string
+	jwtKey                  []byte
+	firestoreClient         *firestore.Client
+	firestoreUserCollection string
+	firestoreLogCollection  string
 }
 
-func NewPromptHandler(geminiKey string, jwtKey []byte, firestoreClient *firestore.Client, firestoreCollection string) *PromptHandler {
+func NewPromptHandler(geminiKey string, jwtKey []byte, firestoreClient *firestore.Client,
+	firestoreUserCollection string, firestoreLogCollection string) *PromptHandler {
 	return &PromptHandler{
-		geminiKey:           geminiKey,
-		jwtKey:              jwtKey,
-		firestoreClient:     firestoreClient,
-		firestoreCollection: firestoreCollection,
+		geminiKey:               geminiKey,
+		jwtKey:                  jwtKey,
+		firestoreClient:         firestoreClient,
+		firestoreUserCollection: firestoreUserCollection,
+		firestoreLogCollection:  firestoreLogCollection,
 	}
 }
 
@@ -41,9 +44,9 @@ func (h *PromptHandler) HandlePrompt(c *gin.Context) {
 		return
 	}
 
-	err = utils.ValidateUserLimit(c, h.firestoreClient, h.firestoreCollection, tokenData.Email)
+	err = utils.ValidateUserLimit(c, h.firestoreClient, h.firestoreUserCollection, tokenData.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -53,7 +56,11 @@ func (h *PromptHandler) HandlePrompt(c *gin.Context) {
 		return
 	}
 
-	utils.IncreaseUsage(c, h.firestoreClient, h.firestoreCollection, tokenData.Email)
+	utils.IncreaseUsage(c, h.firestoreClient, h.firestoreUserCollection, tokenData.Email)
+
+	utils.LogUserQuery(c, h.firestoreClient, h.firestoreLogCollection, tokenData.Email,
+		req.Prompt, req.OS, req.ExistingScript,
+		response.Response, response.ActionType)
 
 	c.JSON(http.StatusOK, &response)
 }
@@ -63,6 +70,8 @@ func (h *PromptHandler) processPrompt(req PromptRequest) (*PromptResponse, error
 	var err error = nil
 	if req.ExistingScript != "" {
 		actionType = "SCRIPT"
+	} else if req.ReadmeData != "" {
+		actionType = "COMMANDFROMREADME"
 	} else {
 		actionType, err = h.getTypeFromGemini(req.Prompt)
 	}
@@ -75,6 +84,8 @@ func (h *PromptHandler) processPrompt(req PromptRequest) (*PromptResponse, error
 	switch actionType {
 	case "COMMAND":
 		responsePrompt, err = h.getCommandFromGemini(req.Prompt, req.OS)
+	case "COMMANDFROMREADME":
+		responsePrompt, err = h.getCommandWithReadmeFromGemini(req.Prompt, req.OS, req.ReadmeData)
 	case "SCRIPT":
 		responsePrompt, err = h.getScriptFromGemini(req.Prompt, req.ExistingScript, req.OS)
 	default:
@@ -122,7 +133,29 @@ func (h *PromptHandler) getCommandFromGemini(prompt string, os string) (string, 
 
         Provide relevant terminal command.
 
-        Your response should either be terminal command.
+        Your response should be a terminal command only.
+    `, prompt, os)
+
+	command, err := clients.GenerateGemini(promptWithContext, h.geminiKey)
+	if err != nil {
+		return "", err
+	}
+
+	return command, nil
+}
+
+func (h *PromptHandler) getCommandWithReadmeFromGemini(prompt string, os string, readme string) (string, error) {
+	promptWithContext := fmt.Sprintf(`
+        You help with finding terminal commands for a user.
+
+        This is user's request: %s.
+		User is on OS: %s
+
+		This is readme of the script: %s
+
+        Provide relevant command.
+
+        Your response should be a command only.
     `, prompt, os)
 
 	command, err := clients.GenerateGemini(promptWithContext, h.geminiKey)
@@ -179,6 +212,7 @@ type PromptRequest struct {
 	Prompt         string `json:"prompt"`
 	OS             string `json:"os"`
 	ExistingScript string `json:"existingScript"`
+	ReadmeData     string `json:"readmeData"`
 }
 
 type PromptResponse struct {

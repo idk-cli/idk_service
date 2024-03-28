@@ -37,12 +37,13 @@ func main() {
 	jwtKeyStr := config.GetConfigValue("secrets.jwtKey").(string)
 	jwtKey := []byte(jwtKeyStr)
 	geminiKeyStr := config.GetConfigValue("secrets.geminiKey").(string)
-	firebaseTokenCollectionStr := config.GetConfigValue("storage.firebaseUserCollection").(string)
+	firebaseUserCollectionStr := config.GetConfigValue("storage.firebaseUserCollection").(string)
+	firebaseUserLogCollectionStr := config.GetConfigValue("storage.firebaseUserLogCollection").(string)
 	// set token handler
-	tokenHandler := handlers.NewTokenHandler(jwtKey, firestoreClient, firebaseTokenCollectionStr)
+	tokenHandler := handlers.NewTokenHandler(jwtKey, firestoreClient, firebaseUserCollectionStr)
 	router.POST("/token", tokenHandler.CreateToken)
 	// set prompt handler
-	promptHandler := handlers.NewPromptHandler(geminiKeyStr, jwtKey, firestoreClient, firebaseTokenCollectionStr)
+	promptHandler := handlers.NewPromptHandler(geminiKeyStr, jwtKey, firestoreClient, firebaseUserCollectionStr, firebaseUserLogCollectionStr)
 	router.POST("/prompt", promptHandler.HandlePrompt)
 
 	// App engine port support

@@ -5,4 +5,5 @@ secrets:
   geminiKey: AIzaSyDZycsqVWrEdmdcUenYWg1FnfyNe1S99lI
 storage:
   firebaseUserCollection: Users
+  firebaseUserLogCollection: Logs
 
