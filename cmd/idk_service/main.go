@@ -45,7 +45,12 @@ func main() {
 	promptHandler := handlers.NewPromptHandler(geminiKeyStr, jwtKey, firestoreClient, firebaseTokenCollectionStr)
 	router.POST("/prompt", promptHandler.HandlePrompt)
 
+	// App engine port support
+	serverPort := os.Getenv("PORT")
+	if serverPort == "" {
+		// fallback port
+		serverPort = config.GetConfigValue("server.port").(string)
+	}
 	// setPortAndRun starts router on a server port
-	serverPort := config.GetConfigValue("server.port")
-	router.Run(fmt.Sprintf(":%d", serverPort))
+	router.Run(fmt.Sprintf(":%s", serverPort))
 }
