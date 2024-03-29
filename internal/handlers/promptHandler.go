@@ -38,7 +38,7 @@ func (h *PromptHandler) HandlePrompt(c *gin.Context) {
 	}
 
 	if req.Prompt == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Prompt can not be empty"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Prompt can not be empty"})
 		return
 	}
 
