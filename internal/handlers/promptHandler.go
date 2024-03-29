@@ -31,16 +31,21 @@ func NewPromptHandler(geminiKey string, jwtKey []byte, firestoreClient *firestor
 }
 
 func (h *PromptHandler) HandlePrompt(c *gin.Context) {
+	var req PromptRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
+		return
+	}
+
+	if req.Prompt == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Prompt can not be empty"})
+		return
+	}
+
 	token := c.GetHeader("Authorization")
 	tokenData, err := utils.GetDataFromToken(token, h.jwtKey)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-
-	var req PromptRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
 		return
 	}
 
