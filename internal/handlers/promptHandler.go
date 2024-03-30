@@ -88,7 +88,7 @@ func (h *PromptHandler) processPrompt(req PromptRequest) (*PromptResponse, error
 	responsePrompt := ""
 	switch actionType {
 	case "COMMAND":
-		responsePrompt, err = h.getCommandFromGemini(req.Prompt, req.OS)
+		responsePrompt, err = h.getCommandFromGemini(req.Prompt, req.OS, req.Pwd)
 	case "COMMANDFROMREADME":
 		responsePrompt, err = h.getCommandWithReadmeFromGemini(req.Prompt, req.OS, req.ReadmeData)
 	case "SCRIPT":
@@ -129,17 +129,18 @@ func (h *PromptHandler) getTypeFromGemini(prompt string) (string, error) {
 	return actionType, nil
 }
 
-func (h *PromptHandler) getCommandFromGemini(prompt string, os string) (string, error) {
+func (h *PromptHandler) getCommandFromGemini(prompt string, os string, pwd string) (string, error) {
 	promptWithContext := fmt.Sprintf(`
         You help with finding terminal commands for a user.
 
         This is user's request: %s.
 		User is on OS: %s
+		User's current working directory is: %s
 
         Provide relevant terminal command.
 
         Your response should be a terminal command only.
-    `, prompt, os)
+    `, prompt, os, pwd)
 
 	command, err := clients.GenerateGemini(promptWithContext, h.geminiKey)
 	if err != nil {
@@ -218,6 +219,7 @@ type PromptRequest struct {
 	OS             string `json:"os"`
 	ExistingScript string `json:"existingScript"`
 	ReadmeData     string `json:"readmeData"`
+	Pwd            string `json:"pwd"`
 }
 
 type PromptResponse struct {
