@@ -114,8 +114,8 @@ func (h *PromptHandler) getTypeFromGemini(prompt string) (string, error) {
     This is user's request: %s.
 
     Provide which type of request is it:
-    COMMAND: If user is asking to create a terminal command
-    SCRIPT: If user is asking to perform multiple commands
+    COMMAND: If user is asking to create a single terminal command
+    SCRIPT: If user is asking to perform multiple commands or expilicty mentioning script
     NONE: If it is something that is not a terminal request
 
     Your response should only be type COMMAND, SCRIPT or NONE
