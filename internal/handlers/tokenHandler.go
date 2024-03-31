@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"idk_service/internal/utils"
@@ -10,30 +11,97 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 type TokenHandler struct {
 	jwtKey              []byte
 	firestoreClient     *firestore.Client
 	firestoreCollection string
+	googleClientId      string
+	googleClientSecret  string
 }
 
-func NewTokenHandler(jwtKey []byte, firestoreClient *firestore.Client, firestoreCollection string) *TokenHandler {
+func NewTokenHandler(jwtKey []byte, firestoreClient *firestore.Client,
+	firestoreCollection string, googleClientId string, googleClientSecret string) *TokenHandler {
 	return &TokenHandler{
 		jwtKey:              jwtKey,
 		firestoreClient:     firestoreClient,
 		firestoreCollection: firestoreCollection,
+		googleClientId:      googleClientId,
+		googleClientSecret:  googleClientSecret,
 	}
 }
 
+func (h *TokenHandler) CreateGoogleAuthCodeURL(c *gin.Context) {
+	var req GoogleOAuthCodeUrlRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
+		return
+	}
+
+	conf := &oauth2.Config{
+		ClientID:     h.googleClientId,
+		ClientSecret: h.googleClientSecret,
+		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+		RedirectURL:  "http://localhost:7999/callback",
+		Endpoint:     google.Endpoint,
+	}
+
+	url := conf.AuthCodeURL(req.State, oauth2.AccessTypeOffline)
+
+	c.JSON(http.StatusOK, GoogleOAuthCodeUrlResponse{
+		Url: url,
+	})
+}
+
+func (h *TokenHandler) CreateGoogleAuthExchange(c *gin.Context) {
+	var req GoogleOAuthCodeUrlRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
+		return
+	}
+
+	conf := &oauth2.Config{
+		ClientID:     h.googleClientId,
+		ClientSecret: h.googleClientSecret,
+		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+		RedirectURL:  "http://localhost:7999/callback",
+		Endpoint:     google.Endpoint,
+	}
+
+	url := conf.AuthCodeURL(req.State, oauth2.AccessTypeOffline)
+
+	c.JSON(http.StatusOK, GoogleOAuthCodeUrlResponse{
+		Url: url,
+	})
+}
+
 func (h *TokenHandler) CreateToken(c *gin.Context) {
+	ctx := context.Background()
+
 	var req TokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
 		return
 	}
 
-	googleUser, err := getGoogleUserInfo(req.AccessToken)
+	googleConf := &oauth2.Config{
+		ClientID:     h.googleClientId,
+		ClientSecret: h.googleClientSecret,
+		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+		RedirectURL:  "http://localhost:7999/callback",
+		Endpoint:     google.Endpoint,
+	}
+
+	googleAuth, err := googleConf.Exchange(ctx, req.GoogleAuthCode)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Code"})
+		return
+	}
+
+	googleUser, err := getGoogleUserInfo(googleAuth.AccessToken)
 
 	// Verify the access token with Google
 	if err != nil {
@@ -61,7 +129,7 @@ func (h *TokenHandler) CreateToken(c *gin.Context) {
 
 	if user == nil {
 		// create new user if doesn't exist
-		err = utils.SaveUser(c, h.firestoreClient, h.firestoreCollection, email, req.AccessToken, req.RefreshToken)
+		err = utils.SaveUser(c, h.firestoreClient, h.firestoreCollection, email, googleAuth.AccessToken, googleAuth.RefreshToken)
 	}
 
 	if err != nil {
@@ -108,9 +176,16 @@ func getGoogleUserInfo(accessToken string) (*GoogleUserInfo, error) {
 	return &userInfo, nil
 }
 
+type GoogleOAuthCodeUrlRequest struct {
+	State string `json:"state"`
+}
+
+type GoogleOAuthCodeUrlResponse struct {
+	Url string `json:"url"`
+}
+
 type TokenRequest struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
+	GoogleAuthCode string `json:"googleAuthCode"`
 }
 
 type TokenResponse struct {

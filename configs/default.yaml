@@ -3,7 +3,8 @@ server:
 secrets:
   jwtKey: 3djrWVZQJq5NbFqSEBQpRPxgR3B9U5
   geminiKey: AIzaSyDZycsqVWrEdmdcUenYWg1FnfyNe1S99lI
+  googleOAuth2ClientId: "258683775542-o1bdalii3tvpppc8vf3tqrlgljgd15rg.apps.googleusercontent.com"
+  googleOAuth2Secret: "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"
 storage:
   firebaseUserCollection: Users
   firebaseUserLogCollection: Logs
-

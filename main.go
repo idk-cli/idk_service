@@ -39,8 +39,12 @@ func main() {
 	geminiKeyStr := config.GetConfigValue("secrets.geminiKey").(string)
 	firebaseUserCollectionStr := config.GetConfigValue("storage.firebaseUserCollection").(string)
 	firebaseUserLogCollectionStr := config.GetConfigValue("storage.firebaseUserLogCollection").(string)
+	googleOAuth2ClientIdStr := config.GetConfigValue("secrets.googleOAuth2ClientId").(string)
+	googleOAuth2SecretStr := config.GetConfigValue("secrets.googleOAuth2Secret").(string)
 	// set token handler
-	tokenHandler := handlers.NewTokenHandler(jwtKey, firestoreClient, firebaseUserCollectionStr)
+	tokenHandler := handlers.NewTokenHandler(jwtKey, firestoreClient,
+		firebaseUserCollectionStr, googleOAuth2ClientIdStr, googleOAuth2SecretStr)
+	router.POST("/googleAuthUrl", tokenHandler.CreateGoogleAuthCodeURL)
 	router.POST("/token", tokenHandler.CreateToken)
 	// set prompt handler
 	promptHandler := handlers.NewPromptHandler(geminiKeyStr, jwtKey, firestoreClient, firebaseUserCollectionStr, firebaseUserLogCollectionStr)
