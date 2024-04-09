@@ -89,6 +89,8 @@ func (h *PromptHandler) processPrompt(req PromptRequest) (*PromptResponse, error
 	switch actionType {
 	case "COMMAND":
 		responsePrompt, err = h.getCommandFromGemini(req.Prompt, req.OS)
+	case "CD":
+		responsePrompt, err = h.getCDFolderFromGemini(req.Prompt)
 	case "COMMANDFROMREADME":
 		responsePrompt, err = h.getCommandWithReadmeFromGemini(req.Prompt, req.OS, req.ReadmeData)
 	case "SCRIPT":
@@ -114,6 +116,7 @@ func (h *PromptHandler) getTypeFromGemini(prompt string) (string, error) {
     This is user's request: %s.
 
     Provide which type of request is it:
+	CD: If user is asking to go to a particular folder. Example: go to xyz folder, cd to xyz folder etc
     COMMAND: If user is asking to create a single terminal command
     SCRIPT: If user is asking to perform multiple commands or expilicty mentioning script
     NONE: If it is something that is not a terminal request
@@ -140,6 +143,23 @@ func (h *PromptHandler) getCommandFromGemini(prompt string, os string) (string, 
 
         Your response should be a terminal command only.
     `, prompt, os)
+
+	command, err := clients.GenerateGemini(promptWithContext, h.geminiKey)
+	if err != nil {
+		return "", err
+	}
+
+	return command, nil
+}
+
+func (h *PromptHandler) getCDFolderFromGemini(prompt string) (string, error) {
+	promptWithContext := fmt.Sprintf(`
+        Provide folder name where user wants to go.
+
+        This is user's request: %s.
+
+        Your response should only be folder name.
+    `, prompt)
 
 	command, err := clients.GenerateGemini(promptWithContext, h.geminiKey)
 	if err != nil {
