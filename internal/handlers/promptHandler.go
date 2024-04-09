@@ -77,6 +77,8 @@ func (h *PromptHandler) processPrompt(req PromptRequest) (*PromptResponse, error
 		actionType = "SCRIPT"
 	} else if req.ReadmeData != "" {
 		actionType = "COMMANDFROMREADME"
+	} else if utils.ContainsAnyIgnoreCase(req.Prompt, []string{"go to", "cd"}) {
+		actionType = "CD"
 	} else {
 		actionType, err = h.getTypeFromGemini(req.Prompt)
 	}
@@ -116,7 +118,6 @@ func (h *PromptHandler) getTypeFromGemini(prompt string) (string, error) {
     This is user's request: %s.
 
     Provide which type of request is it:
-	CD: If user is asking to go to a particular folder. Example: go to xyz folder, cd to xyz folder etc
     COMMAND: If user is asking to create a single terminal command
     SCRIPT: If user is asking to perform multiple commands or expilicty mentioning script
     NONE: If it is something that is not a terminal request
