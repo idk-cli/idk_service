@@ -77,8 +77,6 @@ func (h *PromptHandler) processPrompt(req PromptRequest) (*PromptResponse, error
 		actionType = "SCRIPT"
 	} else if req.ReadmeData != "" {
 		actionType = "COMMANDFROMREADME"
-	} else if utils.ContainsAnyIgnoreCase(req.Prompt, []string{"go to", "cd"}) {
-		actionType = "CD"
 	} else {
 		actionType, err = h.getTypeFromGemini(req.Prompt)
 	}
@@ -91,8 +89,6 @@ func (h *PromptHandler) processPrompt(req PromptRequest) (*PromptResponse, error
 	switch actionType {
 	case "COMMAND":
 		responsePrompt, err = h.getCommandFromGemini(req.Prompt, req.OS)
-	case "CD":
-		responsePrompt, err = h.getCDFolderFromGemini(req.Prompt)
 	case "COMMANDFROMREADME":
 		responsePrompt, err = h.getCommandWithReadmeFromGemini(req.Prompt, req.OS, req.ReadmeData)
 	case "SCRIPT":
@@ -147,23 +143,6 @@ func (h *PromptHandler) getCommandFromGemini(prompt string, os string) (string, 
 
         Your response should be a terminal command only.
     `, prompt, os)
-
-	command, err := clients.GenerateGemini(promptWithContext, h.geminiKey)
-	if err != nil {
-		return "", err
-	}
-
-	return command, nil
-}
-
-func (h *PromptHandler) getCDFolderFromGemini(prompt string) (string, error) {
-	promptWithContext := fmt.Sprintf(`
-        Provide folder name where user wants to go.
-
-        This is user's request: %s.
-
-        Your response should only be folder name.
-    `, prompt)
 
 	command, err := clients.GenerateGemini(promptWithContext, h.geminiKey)
 	if err != nil {
