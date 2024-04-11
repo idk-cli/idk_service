@@ -142,6 +142,9 @@ func (h *PromptHandler) getCommandFromGemini(prompt string, os string) (string, 
 
         Provide relevant terminal command.
 
+		Put any user input needed in "[]"
+		Example: kubctl get pods -n [enter_namespace]
+
         Your response should be a terminal command only.
     `, prompt, os)
 
