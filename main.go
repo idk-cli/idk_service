@@ -49,6 +49,9 @@ func main() {
 	// set prompt handler
 	promptHandler := handlers.NewPromptHandler(geminiKeyStr, jwtKey, firestoreClient, firebaseUserCollectionStr, firebaseUserLogCollectionStr)
 	router.POST("/prompt", promptHandler.HandlePrompt)
+	// set debug handler
+	debugHandler := handlers.NewDebugHandler(geminiKeyStr, jwtKey, firestoreClient, firebaseUserCollectionStr, firebaseUserLogCollectionStr)
+	router.POST("/debug/command", debugHandler.HandleDebugCommand)
 
 	// App engine port support
 	serverPort := os.Getenv("PORT")
