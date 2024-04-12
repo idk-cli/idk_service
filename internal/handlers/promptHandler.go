@@ -75,10 +75,8 @@ func (h *PromptHandler) processPrompt(req PromptRequest) (*PromptResponse, error
 	var err error = nil
 	if req.ExistingScript != "" {
 		actionType = "SCRIPT"
-	} else if req.ReadmeData != "" {
-		actionType = "COMMANDFROMREADME"
 	} else {
-		actionType, err = h.getTypeFromGemini(req.Prompt)
+		actionType, err = h.getTypeFromGemini(req.Prompt, req.ReadmeData)
 	}
 
 	if err != nil {
@@ -107,19 +105,21 @@ func (h *PromptHandler) processPrompt(req PromptRequest) (*PromptResponse, error
 	}, nil
 }
 
-func (h *PromptHandler) getTypeFromGemini(prompt string) (string, error) {
+func (h *PromptHandler) getTypeFromGemini(prompt string, readmeData string) (string, error) {
 	promptWithContext := fmt.Sprintf(`
     You help users using terminal experience."
 
     This is user's request: %s.
+	This is readme of user's present folder: %s
 
     Provide which type of request is it:
     COMMAND: If user is asking to create a single terminal command
     SCRIPT: If user is asking to perform multiple commands or expilicty mentioning script
+	COMMANDFROMREADME: If user is asking to run a command from readme data
     NONE: If it is something that is not a terminal request
 
     Your response should only be type COMMAND, SCRIPT or NONE
-`, prompt)
+`, prompt, readmeData)
 
 	actionType, err := clients.GenerateGemini(promptWithContext, h.geminiKey)
 	if err != nil {
