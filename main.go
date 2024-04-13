@@ -52,6 +52,9 @@ func main() {
 	// set debug handler
 	debugHandler := handlers.NewDebugHandler(geminiKeyStr, jwtKey, firestoreClient, firebaseUserCollectionStr, firebaseUserLogCollectionStr)
 	router.POST("/debug/command", debugHandler.HandleDebugCommand)
+	// setup project run handler
+	runHandler := handlers.NewRunHandler(geminiKeyStr, jwtKey, firestoreClient, firebaseUserCollectionStr, firebaseUserLogCollectionStr)
+	router.POST("/run/init", runHandler.HandleGetInitComamnds)
 
 	// App engine port support
 	serverPort := os.Getenv("PORT")

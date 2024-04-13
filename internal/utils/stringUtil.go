@@ -21,3 +21,10 @@ func ContainsAnyIgnoreCase(str string, substrs []string) bool {
 	// If no substrings are contained, return false
 	return false
 }
+
+func CleanGeminiJsonStr(geminiJsonStr string) string {
+	cleanedPaLMResponse := strings.Replace(geminiJsonStr, "json", "", -1)
+	cleanedPaLMResponse = strings.Replace(cleanedPaLMResponse, "```", "", -1)
+	cleanedPaLMResponse = strings.Replace(cleanedPaLMResponse, "\n", "", -1)
+	return cleanedPaLMResponse
+}
