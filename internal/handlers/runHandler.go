@@ -90,11 +90,10 @@ func (h *RunHandler) getProjectTypeFromGemini(req RunGetProjectInitRequest) (*Ru
 
 	promptWithContext = promptWithContext + fmt.Sprintf(`
 		User has brew installed. But assume nothing else is installed.
-		Not even langauge, compiler etc to run the project.
 		Provide all commands user needs to make sure I can run the project.
 		(I am already in the project folder)
-		Start from brew commands to install whatever is needed
-		then focus on commands to build the project depending on language
+		Start from brew commands to install whatever is needed including langauge, tools etc
+		then focus on commands to build the project depending on the language
 		and then eventually last command should be to run the project
 	   
 	 	Your response should be in this format: 
